@@ -2061,7 +2061,7 @@ chroot /tmp/urfs /bin/bash -c /install-tegra.sh
 rm /tmp/urfs/install-tegra.sh
 
 echo "console=tty1 debug verbose root=${target_rootfs} rootwait rw lsm.module_locking=0" > kernel-config
-vbutil_arch="x86"
+vbutil_arch="x86_64"
 if [ $ubuntu_arch = "armhf" ]
 then
   vbutil_arch="arm"
