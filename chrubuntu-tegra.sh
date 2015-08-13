@@ -137,21 +137,21 @@ then
   ubuntu_arch="amd64"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="ubuntu-desktop"
+    ubuntu_metapackage="xubuntu-minimal"
   fi
 elif [ "$chromebook_arch" = "i686" ]
 then
   ubuntu_arch="i386"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="ubuntu-desktop"
+    ubuntu_metapackage="xubuntu-minimal"
   fi
 elif [ "$chromebook_arch" = "armv7l" ]
 then
   ubuntu_arch="armhf"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="xubuntu-desktop"
+    ubuntu_metapackage="xubuntu-minimal"
   fi
 else
   echo -e "Error: This script doesn't know how to install ChrUbuntu on $chromebook_arch"
