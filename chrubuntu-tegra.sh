@@ -151,7 +151,7 @@ then
   ubuntu_arch="armhf"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="xubuntu-minimal"
+    ubuntu_metapackage="xubuntu-desktop"
   fi
 else
   echo -e "Error: This script doesn't know how to install ChrUbuntu on $chromebook_arch"
@@ -252,6 +252,12 @@ if [ $ubuntu_major_version -le 12 ] && [ $ubuntu_minor_version -lt 10 ]
 then
   add_apt_repository_package='python-software-properties'
 fi
+
+if [ -n "$APT_PROXY" ]
+then
+  echo "Setting proxy"
+  echo 'Acquire::http::Proxy "${APT_PROXY}";' > /tmp/urfs/etc/apt/apt.conf
+end
 
 echo -e "apt-get -y update
 apt-get -y dist-upgrade
