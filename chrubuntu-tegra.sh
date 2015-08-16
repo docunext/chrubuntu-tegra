@@ -2073,6 +2073,8 @@ then
   vbutil_arch="arm"
 fi
 
+echo "VBUTIL ARCH ${vbutil_arch}"
+
 current_rootfs="`rootdev -s`"
 current_kernfs_num=$((${current_rootfs: -1:1}-1))
 current_kernfs=${current_rootfs: 0:-1}$current_kernfs_num
