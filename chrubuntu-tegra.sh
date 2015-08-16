@@ -256,7 +256,7 @@ fi
 if [ -n "$APT_PROXY" ]
 then
   echo "Setting proxy"
-  echo 'Acquire::http::Proxy "${APT_PROXY}";' > /tmp/urfs/etc/apt/apt.conf
+  echo "Acquire::http::Proxy \"${APT_PROXY}\";" > /tmp/urfs/etc/apt/apt.conf
 fi
 
 echo -e "apt-get -y update
