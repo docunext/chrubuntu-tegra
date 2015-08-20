@@ -319,8 +319,8 @@ rm /tmp/urfs/install-flash.sh
 # BIG specific files here
 cp /etc/X11/xorg.conf.d/tegra.conf /tmp/urfs/usr/share/X11/xorg.conf.d/
 l4tdir=`mktemp -d`
-l4t=Tegra124_Linux_R21.1.0_armhf.tbz2
-wget -P ${l4tdir} http://developer.download.nvidia.com/mobile/tegra/l4t/r21.1.0/${l4t}
+l4t=Tegra124_Linux_R21.3.0_armhf.tbz2
+wget -P ${l4tdir} http://developer.download.nvidia.com/mobile/tegra/l4t/r21.3.0/${l4t}
 cd ${l4tdir}
 tar xvpf ${l4t}
 cd Linux_for_Tegra/rootfs/
