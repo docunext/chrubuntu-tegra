@@ -1,23 +1,17 @@
 set -e
 
-# example use:
-#   1. Prepare MMC card on a different computer as stock chrome os
-#      does not carry cgpt any more
-#   2. Then download this script to a /tmp folder and from there run: 
-#      sudo bash chrubuntu-tegra.sh default 14.04 /dev/mmcblk1
-
 # fw_type will always be developer for Mario.
 # Alex and ZGB need the developer BIOS installed though.
 fw_type="`crossystem mainfw_type`"
 if [ ! "$fw_type" = "developer" ]
   then
-    echo -e "\nYour Chromebook is not running a developer BIOS!"
+    echo -e "\nYou're Chromebook is not running a developer BIOS!"
     echo -e "You need to run:"
     echo -e ""
     echo -e "sudo chromeos-firmwareupdate --mode=todev"
     echo -e ""
     echo -e "and then re-run this script."
-    exit
+    exit 
 fi
 
 powerd_status="`initctl status powerd`"
@@ -38,16 +32,17 @@ if [ "$3" != "" ]; then
   read -p "Press [Enter] to install ChrUbuntu on ${target_disk} or CTRL+C to quit"
 
   ext_size="`blockdev --getsz ${target_disk}`"
-  arootfs_size=$((ext_size - 65600 - 33 - 4*1024*1024*1024/512))
-#  cgpt create ${target_disk}
-#  cgpt add -i 6 -b 64 -s 32768 -S 1 -P 5 -l KERN-A -t "kernel" ${target_disk}
-#  cgpt add -i 7 -b 65600 -s $aroot_size -l ROOT-A -t "rootfs" ${target_disk}
+  aroot_size=$((ext_size - 65600 - 33))
+  parted --script ${target_disk} "mktable gpt"
+  cgpt create ${target_disk} 
+  cgpt add -i 6 -b 64 -s 32768 -S 1 -P 5 -l KERN-A -t "kernel" ${target_disk}
+  cgpt add -i 7 -b 65600 -s $aroot_size -l ROOT-A -t "rootfs" ${target_disk}
   sync
   blockdev --rereadpt ${target_disk}
-#  partprobe ${target_disk}
+  partprobe ${target_disk}
   crossystem dev_boot_usb=1
 else
-  target_disk="`rootdev -d -s`"
+target_disk="`rootdev -d -s`"
   # Do partitioning (if we haven't already)
   ckern_size="`cgpt show -i 6 -n -s -q ${target_disk}`"
   croot_size="`cgpt show -i 7 -n -s -q ${target_disk}`"
@@ -75,31 +70,30 @@ else
     done
     # We've got our size in GB for ROOT-C so do the math...
 
-    # Calculate sector size for rootc
+    #calculate sector size for rootc
     rootc_size=$(($ubuntu_size*1024*1024*2))
 
-    # kernc is always 16mb
+    #kernc is always 16mb
     kernc_size=32768
-
-    # New stateful size with rootc and kernc subtracted from original
+echo -e "still doing the partition"
+    #new stateful size with rootc and kernc subtracted from original
     stateful_size=$(($state_size - $rootc_size - $kernc_size))
 
-    # Start stateful at the same spot it currently starts at
+    #start stateful at the same spot it currently starts at
     stateful_start="`cgpt show -i 1 -n -b -q ${target_disk}`"
 
-    # Start kernc at stateful start plus stateful size
+    #start kernc at stateful start plus stateful size
     kernc_start=$(($stateful_start + $stateful_size))
 
-    # Start rootc at kernc start plus kernc size
+    #start rootc at kernc start plus kernc size
     rootc_start=$(($kernc_start + $kernc_size))
 
-    # Do the real work
+    #Do the real work
 
-    echo -e "\n\nModifying partition table to make room for Ubuntu."
+    echo -e "\n\nModifying partition table to make room for Ubuntu." 
     echo -e "Your Chromebook will reboot, wipe your data and then"
-    echo -e "you should re-run this script..."
-    umount -f /mnt/stateful_partition
-
+    echo -e "you should re-run this script..." 
+umount -l /mnt/stateful_partition
     # stateful first
     cgpt add -i 1 -b $stateful_start -s $stateful_size -l STATE ${target_disk}
 
@@ -121,37 +115,26 @@ chromebook_arch="`uname -m`"
 
 ubuntu_metapackage=${1:-default}
 
-latest_ubuntu=`wget --quiet -O - http://changelogs.ubuntu.com/meta-release | grep "^Version: " | tail -1 | sed -r 's/^Version: ([^ ]+)( LTS)?$/\1/'`
-ubuntu_version=${2:-$latest_ubuntu}
-
-if [ "$ubuntu_version" = "lts" ]
-then
-  ubuntu_version=`wget --quiet -O - http://changelogs.ubuntu.com/meta-release | grep "^Version:" | grep "LTS" | tail -1 | sed -r 's/^Version: ([^ ]+)( LTS)?$/\1/'`
-elif [ "$ubuntu_version" = "latest" ]
-then
-  ubuntu_version=$latest_ubuntu
-fi
-
 if [ "$chromebook_arch" = "x86_64" ]
 then
   ubuntu_arch="amd64"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="xubuntu-minimal"
+    ubuntu_metapackage="ubuntu-desktop"
   fi
 elif [ "$chromebook_arch" = "i686" ]
 then
   ubuntu_arch="i386"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="xubuntu-minimal"
+    ubuntu_metapackage="ubuntu-desktop"
   fi
 elif [ "$chromebook_arch" = "armv7l" ]
 then
   ubuntu_arch="armhf"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="xubuntu-desktop"
+    ubuntu_metapackage="xubuntu-core xubuntu-restricted-addons xubuntu-restricted-extras zenity"
   fi
 else
   echo -e "Error: This script doesn't know how to install ChrUbuntu on $chromebook_arch"
@@ -162,8 +145,7 @@ echo -e "\nChrome device model is: $hwid\n"
 
 echo -e "Installing Ubuntu ${ubuntu_version} with metapackage ${ubuntu_metapackage}\n"
 
-echo -e "Kernel Arch is: $chromebook_arch \n"
-echo -e "Installing Ubuntu Arch: $ubuntu_arch\n"
+echo -e "Kernel Arch is: $chromebook_arch  Installing Ubuntu Arch: $ubuntu_arch\n"
 
 read -p "Press [Enter] to continue..."
 
@@ -188,7 +170,7 @@ echo "Target Kernel Partition: $target_kern  Target Root FS: ${target_rootfs}"
 if mount|grep ${target_rootfs}
 then
   echo "Refusing to continue since ${target_rootfs} is formatted and mounted. Try rebooting"
-  exit
+  exit 
 fi
 
 mkfs.ext4 ${target_rootfs}
@@ -199,11 +181,10 @@ then
 fi
 mount -t ext4 ${target_rootfs} /tmp/urfs
 
-tar_file="http://cdimage.ubuntu.com/ubuntu-core/releases/$ubuntu_version/release/ubuntu-core-$ubuntu_version-core-$ubuntu_arch.tar.gz"
+tar_file="http://cdimage.ubuntu.com/ubuntu-core/releases/14.04/release/ubuntu-core-14.04-core-$ubuntu_arch.tar.gz"
 if [ $ubuntu_version = "dev" ]
 then
-  ubuntu_animal=`wget --quiet -O - http://changelogs.ubuntu.com/meta-release-development | grep "^Dist: " | tail -1 | sed -r 's/^Dist: (.*)$/\1/'`
-  tar_file="http://cdimage.ubuntu.com/ubuntu-core/daily/current/$ubuntu_animal-core-$ubuntu_arch.tar.gz"
+  tar_file="http://cdimage.ubuntu.com/ubuntu-core/daily/current/vivid-core-$ubuntu_arch.tar.gz"
 fi
 wget -O - $tar_file | tar xzvvp -C /tmp/urfs/
 
@@ -220,7 +201,7 @@ else
 fi
 
 chmod a+rx /tmp/urfs/usr/bin/cgpt
-if [ ! -d /tmp/urfs/run/resolvconf/ ]
+if [ ! -d /tmp/urfs/run/resolvconf/ ] 
 then
   mkdir /tmp/urfs/run/resolvconf/
 fi
@@ -260,6 +241,7 @@ then
 fi
 
 echo -e "apt-get -y update
+touch /etc/init.d/whoopsie
 apt-get -y dist-upgrade
 apt-get -y install ubuntu-minimal
 apt-get -y install wget
@@ -267,7 +249,7 @@ apt-get -y install $add_apt_repository_package
 add-apt-repository main
 add-apt-repository universe
 add-apt-repository restricted
-add-apt-repository multiverse
+add-apt-repository multiverse 
 apt-get update
 apt-get -y install $ubuntu_metapackage
 $cr_install
@@ -302,11 +284,11 @@ cp -ar /lib/firmware/* /tmp/urfs/lib/firmware/
 cp /opt/google/chrome/pepper/libpepflashplayer.so /tmp/urfs/usr/lib/chromium-browser
 
 # tell chromium-browser where to find flash plugin
-echo -e 'CHROMIUM_FLAGS="${CHROMIUM_FLAGS} --ppapi-flash-path=/usr/lib/chromium-browser/libpepflashplayer.so"' >> /tmp/urfs/etc/chromium-browser/default
+echo -e 'CHROMIUM_FLAGS="${CHROMIUM_FLAGS} --ppapi-flash-path=/usr/lib/chromium-browser/libpepflashplayer.so"' >> /tmp/urfs/etc/chromium-browser/default 
 
 # flash plugin requires a new version of libstdc++6 from test repository
 cat > /tmp/urfs/install-flash.sh <<EOF
-add-apt-repository -y ppa:ubuntu-toolchain-r/test
+add-apt-repository -y ppa:ubuntu-toolchain-r/test 
 apt-get update
 apt-get install -y libstdc++6
 EOF
@@ -319,8 +301,8 @@ rm /tmp/urfs/install-flash.sh
 # BIG specific files here
 cp /etc/X11/xorg.conf.d/tegra.conf /tmp/urfs/usr/share/X11/xorg.conf.d/
 l4tdir=`mktemp -d`
-l4t=Tegra124_Linux_R21.3.0_armhf.tbz2
-wget -P ${l4tdir} http://developer.download.nvidia.com/mobile/tegra/l4t/r21.3.0/${l4t}
+l4t=Tegra124_Linux_R21.2.0_armhf.tbz2
+wget -P ${l4tdir} http://developer.download.nvidia.com/mobile/tegra/l4t/r21.2.0/pm375_release_armhf/Tegra124_Linux_R21.2.0_armhf.tbz2
 cd ${l4tdir}
 tar xvpf ${l4t}
 cd Linux_for_Tegra/rootfs/
@@ -2067,13 +2049,11 @@ chroot /tmp/urfs /bin/bash -c /install-tegra.sh
 rm /tmp/urfs/install-tegra.sh
 
 echo "console=tty1 debug verbose root=${target_rootfs} rootwait rw lsm.module_locking=0" > kernel-config
-vbutil_arch="x86_64"
+vbutil_arch="x86"
 if [ $ubuntu_arch = "armhf" ]
 then
   vbutil_arch="arm"
 fi
-
-echo "VBUTIL ARCH ${vbutil_arch}"
 
 current_rootfs="`rootdev -s`"
 current_kernfs_num=$((${current_rootfs: -1:1}-1))
