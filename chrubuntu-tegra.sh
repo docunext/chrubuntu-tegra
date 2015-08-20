@@ -299,6 +299,7 @@ rm /tmp/urfs/install-flash.sh
 
 
 # BIG specific files here
+mkdir -p /tmp/urfs/usr/share/X11/xorg.conf.d/
 cp /etc/X11/xorg.conf.d/tegra.conf /tmp/urfs/usr/share/X11/xorg.conf.d/
 l4tdir=`mktemp -d`
 l4t=Tegra124_Linux_R21.4.0_armhf.tbz2
