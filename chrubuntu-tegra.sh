@@ -146,7 +146,7 @@ then
   ubuntu_arch="armhf"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="ubuntu-desktop"
+    ubuntu_metapackage="xubuntu-desktop"
   fi
 else
   echo -e "Error: This script doesn't know how to install ChrUbuntu on $chromebook_arch"
@@ -247,6 +247,12 @@ then
   add_apt_repository_package='python-software-properties'
 fi
 
+if [ -n "$APT_PROXY" ]
+then
+  echo "Setting proxy"
+  echo "Acquire::http::Proxy \"${APT_PROXY}\";" > /tmp/urfs/etc/apt/apt.conf
+fi
+
 echo -e "apt-get -y update
 apt-get -y dist-upgrade
 apt-get -y install ubuntu-minimal
@@ -309,8 +315,17 @@ echo 'install mwifiex_sdio /sbin/modprobe --ignore-install mwifiex_sdio && sleep
 # BIG specific files here
 cp /etc/X11/xorg.conf.d/tegra.conf /tmp/urfs/usr/share/X11/xorg.conf.d/
 l4tdir=`mktemp -d`
-l4t=Tegra124_Linux_R19.3.0_armhf.tbz2
-wget -P ${l4tdir} https://developer.nvidia.com/sites/default/files/akamai/mobile/files/L4T/${l4t}
+
+#l4t=Tegra124_Linux_R21.2.0_armhf.tbz2
+#wget -P ${l4tdir} http://developer.download.nvidia.com/mobile/tegra/l4t/r21.2.0/pm375_release_armhf/Tegra124_Linux_R21.2.0_armhf.tbz2
+
+# cliffords
+#l4t=Tegra124_Linux_R19.3.0_armhf.tbz2
+#wget -P ${l4tdir} https://developer.nvidia.com/sites/default/files/akamai/mobile/files/L4T/${l4t}
+
+l4t=Tegra124_Linux_R21.4.0_armhf.tbz2
+wget -P ${l4tdir} http://developer.download.nvidia.com/embedded/L4T/r21_Release_v4.0/${l4t}
+
 cd ${l4tdir}
 tar xvpf ${l4t}
 cd Linux_for_Tegra/rootfs/
