@@ -42,7 +42,7 @@ if [ "$3" != "" ]; then
   partprobe ${target_disk}
   crossystem dev_boot_usb=1
 else
-target_disk="`rootdev -d -s`"
+  target_disk="`rootdev -d -s`"
   # Do partitioning (if we haven't already)
   ckern_size="`cgpt show -i 6 -n -s -q ${target_disk}`"
   croot_size="`cgpt show -i 7 -n -s -q ${target_disk}`"
@@ -75,7 +75,7 @@ target_disk="`rootdev -d -s`"
 
     #kernc is always 16mb
     kernc_size=32768
-echo -e "still doing the partition"
+
     #new stateful size with rootc and kernc subtracted from original
     stateful_size=$(($state_size - $rootc_size - $kernc_size))
 
@@ -92,8 +92,9 @@ echo -e "still doing the partition"
 
     echo -e "\n\nModifying partition table to make room for Ubuntu." 
     echo -e "Your Chromebook will reboot, wipe your data and then"
-    echo -e "you should re-run this script..." 
-umount -l /mnt/stateful_partition
+    echo -e "you should re-run this script..."
+    umount -l /mnt/stateful_partition
+
     # stateful first
     cgpt add -i 1 -b $stateful_start -s $stateful_size -l STATE ${target_disk}
 
@@ -115,6 +116,17 @@ chromebook_arch="`uname -m`"
 
 ubuntu_metapackage=${1:-default}
 
+latest_ubuntu=`wget --quiet -O - http://changelogs.ubuntu.com/meta-release | grep "^Version: " | tail -1 | sed -r 's/^Version: ([^ ]+)( LTS)?$/\1/'`
+ubuntu_version=${2:-14.04.1}
+
+if [ "$ubuntu_version" = "lts" ]
+then
+  ubuntu_version=`wget --quiet -O - http://changelogs.ubuntu.com/meta-release | grep "^Version:" | grep "LTS" | tail -1 | sed -r 's/^Version: ([^ ]+)( LTS)?$/\1/'`
+elif [ "$ubuntu_version" = "latest" ]
+then
+  ubuntu_version=$latest_ubuntu
+fi
+
 if [ "$chromebook_arch" = "x86_64" ]
 then
   ubuntu_arch="amd64"
@@ -134,7 +146,7 @@ then
   ubuntu_arch="armhf"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="xubuntu-desktop xubuntu-restricted-addons xubuntu-restricted-extras"
+    ubuntu_metapackage="ubuntu-desktop"
   fi
 else
   echo -e "Error: This script doesn't know how to install ChrUbuntu on $chromebook_arch"
@@ -181,10 +193,11 @@ then
 fi
 mount -t ext4 ${target_rootfs} /tmp/urfs
 
-tar_file="http://cdimage.ubuntu.com/ubuntu-core/releases/14.04/release/ubuntu-core-14.04-core-$ubuntu_arch.tar.gz"
+tar_file="http://cdimage.ubuntu.com/ubuntu-core/releases/$ubuntu_version/release/ubuntu-core-$ubuntu_version-core-$ubuntu_arch.tar.gz"
 if [ $ubuntu_version = "dev" ]
 then
-  tar_file="http://cdimage.ubuntu.com/ubuntu-core/daily/current/vivid-core-$ubuntu_arch.tar.gz"
+  ubuntu_animal=`wget --quiet -O - http://changelogs.ubuntu.com/meta-release-development | grep "^Dist: " | tail -1 | sed -r 's/^Dist: (.*)$/\1/'`
+  tar_file="http://cdimage.ubuntu.com/ubuntu-core/daily/current/$ubuntu_animal-core-$ubuntu_arch.tar.gz"
 fi
 wget -O - $tar_file | tar xzvvp -C /tmp/urfs/
 
@@ -234,14 +247,7 @@ then
   add_apt_repository_package='python-software-properties'
 fi
 
-if [ -n "$APT_PROXY" ]
-then
-  echo "Setting proxy"
-  echo "Acquire::http::Proxy \"${APT_PROXY}\";" > /tmp/urfs/etc/apt/apt.conf
-fi
-
 echo -e "apt-get -y update
-touch /etc/init.d/whoopsie
 apt-get -y dist-upgrade
 apt-get -y install ubuntu-minimal
 apt-get -y install wget
@@ -297,16 +303,14 @@ chmod a+x /tmp/urfs/install-flash.sh
 chroot /tmp/urfs /bin/bash -c /install-flash.sh
 rm /tmp/urfs/install-flash.sh
 
+# hack for removing uap0 device on startup (avoid freeze)
+echo 'install mwifiex_sdio /sbin/modprobe --ignore-install mwifiex_sdio && sleep 1 && iw dev uap0 del' > /tmp/urfs/etc/modprobe.d/mwifiex.conf 
 
 # BIG specific files here
-mkdir -p /tmp/urfs/usr/share/X11/xorg.conf.d/
 cp /etc/X11/xorg.conf.d/tegra.conf /tmp/urfs/usr/share/X11/xorg.conf.d/
 l4tdir=`mktemp -d`
-#l4t=Tegra124_Linux_R21.2.0_armhf.tbz2
-#wget -P ${l4tdir} http://developer.download.nvidia.com/mobile/tegra/l4t/r21.2.0/pm375_release_armhf/Tegra124_Linux_R21.2.0_armhf.tbz2
-
-l4t=Tegra124_Linux_R21.4.0_armhf.tbz2
-wget -P ${l4tdir} http://developer.download.nvidia.com/embedded/L4T/r21_Release_v4.0/${l4t}
+l4t=Tegra124_Linux_R19.3.0_armhf.tbz2
+wget -P ${l4tdir} https://developer.nvidia.com/sites/default/files/akamai/mobile/files/L4T/${l4t}
 cd ${l4tdir}
 tar xvpf ${l4t}
 cd Linux_for_Tegra/rootfs/
@@ -348,8 +352,6 @@ KERNEL=="tegra_dc_0", GROUP="video", MODE="0660"
 KERNEL=="tegra_dc_1", GROUP="video", MODE="0660"
 KERNEL=="tegra_dc_ctrl", GROUP="video", MODE="0660"
 EOF
-
-mkdir -p /tmp/urfs/var/lib/alsa/
 
 # alsa mixer settings to enable internal speakers
 cat > /tmp/urfs/var/lib/alsa/asound.state <<EOF
