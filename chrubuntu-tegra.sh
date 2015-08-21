@@ -346,6 +346,8 @@ KERNEL=="tegra_dc_1", GROUP="video", MODE="0660"
 KERNEL=="tegra_dc_ctrl", GROUP="video", MODE="0660"
 EOF
 
+mkdir -p /tmp/urfs/var/lib/alsa/
+
 # alsa mixer settings to enable internal speakers
 cat > /tmp/urfs/var/lib/alsa/asound.state <<EOF
 state.HDATegra {
