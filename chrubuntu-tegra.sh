@@ -302,6 +302,9 @@ rm /tmp/urfs/install-flash.sh
 mkdir -p /tmp/urfs/usr/share/X11/xorg.conf.d/
 cp /etc/X11/xorg.conf.d/tegra.conf /tmp/urfs/usr/share/X11/xorg.conf.d/
 l4tdir=`mktemp -d`
+#l4t=Tegra124_Linux_R21.2.0_armhf.tbz2
+#wget -P ${l4tdir} http://developer.download.nvidia.com/mobile/tegra/l4t/r21.2.0/pm375_release_armhf/Tegra124_Linux_R21.2.0_armhf.tbz2
+
 l4t=Tegra124_Linux_R21.4.0_armhf.tbz2
 wget -P ${l4tdir} http://developer.download.nvidia.com/embedded/L4T/r21_Release_v4.0/${l4t}
 cd ${l4tdir}
