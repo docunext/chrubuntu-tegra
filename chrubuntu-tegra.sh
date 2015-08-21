@@ -134,7 +134,7 @@ then
   ubuntu_arch="armhf"
   if [ "$ubuntu_metapackage" = "default" ]
   then
-    ubuntu_metapackage="xubuntu-core xubuntu-restricted-addons xubuntu-restricted-extras zenity"
+    ubuntu_metapackage="xubuntu-desktop xubuntu-restricted-addons xubuntu-restricted-extras"
   fi
 else
   echo -e "Error: This script doesn't know how to install ChrUbuntu on $chromebook_arch"
