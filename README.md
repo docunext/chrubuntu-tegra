@@ -66,3 +66,7 @@ It may also help to have a USB ethernet dongle handy, but you could also switch 
 Note: In the nm-applet GUI, the weird interface has no name, but you can see it with ifconfig.
 
 With the above changes and a reboot, you should be greeted by the xubuntu login.  As mentioned in the script output, login as user (password: user) and then change all your passwords, add a user for yourself, etc.  Lastly, you need to uninstall one of the screensaver packages (xscreensaver is pretty old) and install zram-config, which will give you a reasonable amount of (fast) RAM-based swap.  Even without the swapfile bug in util-linux I would still recommend zram (which is chock full'o'kernel magic ;)
+
+
+### More ideas
+https://www.tbi.univie.ac.at/~ronny/acer-cb5-311.html
